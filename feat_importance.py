@@ -11,7 +11,7 @@ from train_test import prepare_trte_data, gen_trte_adj_mat, test_epoch
 
 cuda = True if torch.cuda.is_available() else False
 
-def cal_feat_imp(data_folder, model_folder, view_list, num_class):
+def cal_feat_imp(data_folder, model_folder, view_list, num_class, adj_parameter):
     num_view = len(view_list)
     dim_hvcdn = pow(num_class,num_view)
     if data_folder == 'ROSMAP':
@@ -82,5 +82,8 @@ def summarize_imp_feat(featimp_list_list, topn=30):
     df_featimp_top = df_featimp_top.sort_values(by='imp',ascending=False)
     df_featimp_top = df_featimp_top.iloc[:topn]
     print('{:}\t{:}'.format('Rank','Feature name'))
+    feat_names = []
     for i in range(len(df_featimp_top)):
-        print('{:}\t{:}'.format(i+1,df_featimp_top.iloc[i]['feat_name']))
+        print('{:}\t{:}\t{:}'.format(i+1,df_featimp_top.iloc[i]['feat_name'],df_featimp_top.iloc[i]['imp']))
+        feat_names.append(df_featimp_top.iloc[i]['feat_name'])
+    return feat_names, df_featimp_top

@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 import torch
 import torch.nn.functional as F
 from models import init_model_dict, init_optim
-from utils import one_hot_tensor, cal_sample_weight, gen_adj_mat_tensor, gen_test_adj_mat_tensor, cal_adj_mat_parameter
+from utils import one_hot_tensor, cal_sample_weight, gen_adj_mat_tensor, gen_test_adj_mat_tensor, cal_adj_mat_parameter, save_model_dict
 
 cuda = True if torch.cuda.is_available() else False
 
@@ -104,17 +104,19 @@ def test_epoch(data_list, adj_list, te_idx, model_dict):
     return prob
 
 
-def train_test(data_folder, view_list, num_class,
+def train_test(exp_path, 
+               data_folder, 
+               view_list, 
+               num_class,
                lr_e_pretrain, lr_e, lr_c, 
-               num_epoch_pretrain, num_epoch):
+               num_epoch_pretrain, num_epoch,
+               adj_parameter):
     test_inverval = 50
     num_view = len(view_list)
     dim_hvcdn = pow(num_class,num_view)
     if data_folder in  ['ROSMAP', 'LGG']:
-        adj_parameter = 2
         dim_he_list = [200,200,100]
     if data_folder in ['BRCA', 'KIPAN']:
-        adj_parameter = 10
         dim_he_list = [400,400,200]
     data_tr_list, data_trte_list, trte_idx, labels_trte = prepare_trte_data(data_folder, view_list)
     labels_tr_tensor = torch.LongTensor(labels_trte[trte_idx["tr"]])
@@ -161,6 +163,7 @@ def train_test(data_folder, view_list, num_class,
                     best_2 = auc
                     max_indices = np.argmax(te_prob, axis=1)
                     prob = te_prob[:, 1]
+                    save_model_dict(folder=exp_path, model_dict=model_dict)
             else:
                 acc = accuracy_score(labels_trte[trte_idx["te"]], te_prob.argmax(1))
                 f1_w = f1_score(labels_trte[trte_idx["te"]], te_prob.argmax(1), average='weighted')
@@ -172,6 +175,7 @@ def train_test(data_folder, view_list, num_class,
                     best_acc = acc
                     best_1 = f1_w
                     best_2 = f1_m
+                    save_model_dict(folder=exp_path, model_dict=model_dict)
 
                     max_indices = np.argmax(te_prob, axis=1)
                     prob = te_prob[np.arange(te_prob.shape[0]), max_indices]
